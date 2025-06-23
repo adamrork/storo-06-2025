@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH -J storo_s00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=adam.rork@uconn.edu
+#SBATCH -o %x.o%j
+#SBATCH -e %x.e%j
+#SBATCH -p general
+#SBATCH -q general
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 1
+#SBATCH --mem=1G
+#SBATCH -t 00:15:00
+
+## description & notes ##
+#
+# Copy all gene counts data to a new directory.
+#
+
+## settings & env variables ##
+#
+SAMPLES='/core/cbc/core_projects/2025/storo2025/supplement/samples.tsv'
+INPUT_DIR='/scratch/yasir_steven_shared/counts'
+OUTPUT_DIR='/core/cbc/core_projects/2025/storo2025/raw_data'
+#
+
+## begin analysis ##
+
+# Copy the counts data and counts summaries to new directories. #
+# Also, revert their names to the originals, which contain more information. #
+
+sed '1d' "$SAMPLES" | while read -r _ RENAMED ORIGINAL _ _ _ ; do
+	cp -v "$INPUT_DIR"/"$RENAMED".counts "$OUTPUT_DIR"/counts/"$ORIGINAL".counts.tsv
+	cp -v "$INPUT_DIR"/"$RENAMED".counts.summary "$OUTPUT_DIR"/summaries/"$ORIGINAL".counts_summary.tsv
+done

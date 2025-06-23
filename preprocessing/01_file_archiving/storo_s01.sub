@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH -J storo_s01
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=adam.rork@uconn.edu
+#SBATCH -o %x.o%j
+#SBATCH -e %x.e%j
+#SBATCH -p general
+#SBATCH -q general
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -c 1
+#SBATCH --mem=1G
+#SBATCH -t 00:15:00
+
+## description & notes ##
+#
+# Tar & compress data for download.
+#
+# As a practical matter, it is more efficient to conduct gene expression analyses
+# locally in RStudio. Once all code is operational, scripts will be transferred back
+# to the cluster and all analyses will be redone for reproducibility. While tunneling
+# RStudio via SSH with X11 forwarding is an option, this approach is more flexible.
+#
+
+## begin analysis ##
+
+cd /core/cbc/core_projects/2025/storo2025/
+
+tar -cvf storo_raw_data.tar raw_data/
+xz -9 storo_raw_data.tar
+mv -v storo_raw_data.tar.xz transfers/download/
+echo "MD5 Sum: $(md5sum transfers/download/storo_raw_data.tar.xz)"
+
+# Data transferred via scp #
+
