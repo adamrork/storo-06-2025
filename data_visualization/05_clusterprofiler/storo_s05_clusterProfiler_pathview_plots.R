@@ -69,10 +69,24 @@ for ( ctr in deContrasts ) {
 
       # Dynamically create some file names #
       if ( method == "Enr" ) {
-        tmp.title <- renameContrast(name = ctr, addition = " - Enr", flip = FALSE) %>% gsub("[ ]+", " ", .)
+
+        geneVector <- de.geneVector.lst[[reg]][[ctr]]
+
+        if ( reg == "UP") {
+          tmp.title <- renameContrast(name = ctr, addition = " - Enr", flip = FALSE) %>% gsub("[ ]+", " ", .)
+        } else if ( reg == "DOWN" ) {
+          tmp.title <- renameContrast(name = ctr, addition = " - Enr", flip = TRUE) %>% gsub("[ ]+", " ", .)
+        }
 
       } else if ( method == "GSEnr" ) {
-        tmp.title <- renameContrast(name = ctr, addition = " - GSEA", flip = FALSE) %>% gsub("[ ]+", " ", .)
+
+        geneVector <- geneVector.lst[[ctr]]
+
+        if ( reg == "UP") {
+          tmp.title <- renameContrast(name = ctr, addition = " - GSEA", flip = FALSE) %>% gsub("[ ]+", " ", .)
+        } else if ( reg == "DOWN" ) {
+          next
+        }
       }
 
       # For each pathway in the vector or list... #
@@ -80,7 +94,7 @@ for ( ctr in deContrasts ) {
 
         setwd(gv.filepath)
         # Print the relevant pathways to image files #
-        pathview(gene.data  = de.geneVector.lst[[reg]][[ctr]],
+        pathview(gene.data  = geneVector,
                  pathway.id = pathway,
                  species = "mmu", kegg.native = TRUE,
                  pdf.size = c(7, 7),
@@ -88,7 +102,7 @@ for ( ctr in deContrasts ) {
 
         setwd(pv.filepath)
         # Print the relevant pathways to image files #
-        pathview(gene.data  = de.geneVector.lst[[reg]][[ctr]],
+        pathview(gene.data  = geneVector,
                  pathway.id = pathway,
                  species = "mmu", kegg.native = FALSE,
                  pdf.size = c(7, 7),
