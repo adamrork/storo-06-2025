@@ -21,7 +21,7 @@ library(GenomicFeatures)
 
 # Set seed for reproducibility #
 set.seed(123)
-
+warnings()
 # Set working directory and other important directories #
 setwd("~/Desktop/general/projects/clients/2025/002_steven_toro/")
 
@@ -33,7 +33,7 @@ source("Scripts/functions/functions.R")
 load("Data/storo_rdata/storo_s03_differential_gene_expression.RData")
 
 # Define some important variables #
-min.Genes <- 50
+min.Genes <- 25
 min.Terms <- 2
 up.logFC <- 2
 dn.logFC <- -2
@@ -41,8 +41,8 @@ de.FDR <- 0.05
 go.FDR <- 0.05
 
 # Create some empty lists to populate with enrichment results #
+all.genes <- list()
 de.data <- list()
-de.genes <- list()
 pwf.lst <- list()
 goData.lst <- list()
 reducedTerms.lst <- list()
@@ -55,14 +55,17 @@ rrvgoData.lst <- list()
 # For each direction of differential gene expression... #
 for (reg in regDirection) {
 
+  all.genes[[reg]] <- list()
   de.data[[reg]] <- list()
-  de.genes[[reg]] <- list()
   pwf.lst[[reg]] <- list()
 
   filteredContrasts <- vector()
 
   # For each contrast for which differentially expressed genes were examined... #
   for ( ctr in seq_along(deContrasts) ) {
+
+    # Print a message to our warnings log to describe which gene set we are analyzing #
+    warning(paste0("Now analyzing the ", reg, "REGULATED gene set of contrast ", deContrasts[[ctr]]))
 
     # Convert data to a standard data frame #
     de.data[[reg]][[ctr]] <- data.frame(get(deContrasts[[ctr]]))
@@ -71,7 +74,7 @@ for (reg in regDirection) {
     if (reg == "DOWN") {
 
       # Create a positional vector of downregulated (1) and non-downregulated (0) genes #
-      de.genes[[reg]][[ctr]] <- as.integer(!is.na(de.data[[reg]][[ctr]]$padj)
+      all.genes[[reg]][[ctr]] <- as.integer(!is.na(de.data[[reg]][[ctr]]$padj)
                                            & de.data[[reg]][[ctr]]$padj < de.FDR
                                            & de.data[[reg]][[ctr]]$log2FoldChange < dn.logFC)
 
@@ -79,35 +82,39 @@ for (reg in regDirection) {
     } else if (reg == "UP") {
 
       # Create a positional vector of upregulated (1) and non-upregulated (0) genes #
-      de.genes[[reg]][[ctr]] <- as.integer(!is.na(de.data[[reg]][[ctr]]$padj)
+      all.genes[[reg]][[ctr]] <- as.integer(!is.na(de.data[[reg]][[ctr]]$padj)
                                            & de.data[[reg]][[ctr]]$padj < de.FDR
                                            & de.data[[reg]][[ctr]]$log2FoldChange > up.logFC)
     }
 
     # Add gene names to vector of differential expression statuses #
-    names(de.genes[[reg]][[ctr]]) <- row.names(de.data[[reg]][[ctr]])
+    names(all.genes[[reg]][[ctr]]) <- row.names(de.data[[reg]][[ctr]])
 
-    # In general, I would probably not try to perform GO enrichment analyses with fewer than 50 DE genes #
-    if ( sum(de.genes[[reg]][[ctr]]) >= min.Genes ) {
+    # Calculate a probability weighting function using mm10 gene lengths #
+    # Don't fail over the common "plot.new() : figure margins to large" error #
+    try(pwf.lst[[reg]][[ctr]] <- nullp(all.genes[[reg]][[ctr]],
+                                       "mm10", "ensGene",
+                                       bias.data = NULL, plot.fit = TRUE))
 
-      # Calculate a probability weighting function using mm10 gene lengths #
-      # Don't fail over "plot.new() : figure margins to large" errors #
-      try(pwf.lst[[reg]][[ctr]] <- nullp(de.genes[[reg]][[ctr]],
-                                     "mm10", "ensGene",
-                                     bias.data = NULL, plot.fit = TRUE))
+    # Implement a manual filter for gene sets that pass the gene set threshold #
+    # but nevertheless display a low-quality PWF or model convergence warnings #
+    gene.set <- paste0(deContrasts[[ctr]], "_", reg)
+
+    # Here I would not perform GO enrichment analyses with fewer than 25 DE genes or when pwf plot quality is low #
+    if ( sum(all.genes[[reg]][[ctr]]) >= min.Genes && ! gene.set %in% low.qual.pwfs ) {
+
+      # Perform a GO enrichment analysis with GOseq #
+      de.goResults <- goseq(pwf.lst[[reg]][[ctr]],
+                            "mm10",
+                            "ensGene",
+                            test.cats=c("GO:BP", "GO:MF", "GO:CC"))
 
     } else {
 
-      cat("Contrast", deContrasts[[ctr]], "had too few DE Genes\n")
+      warning(paste0("Contrast ", deContrasts[[ctr]], " has too few DE Genes or a low-quality PWF plot"))
       filteredContrasts <- append(filteredContrasts, deContrasts[[ctr]])
       next
     }
-
-    # Perform a GO enrichment analysis with GOseq #
-    de.goResults <- goseq(pwf.lst[[reg]][[ctr]],
-                         "mm10",
-                         "ensGene",
-                         test.cats=c("GO:BP", "GO:MF", "GO:CC"))
 
     # Correct over-represented p-values via Benjamini-Hochberg #
     de.goResults$FDR <- p.adjust(de.goResults$over_represented_pvalue, "BH")
@@ -166,7 +173,7 @@ for (reg in regDirection) {
       # If there are too few terms to perform clustering, move to the next category #
       } else {
 
-        de.simData < "NA"
+        de.simData <- "NA"
       }
     }
   }
@@ -174,6 +181,9 @@ for (reg in regDirection) {
   # Filter out null list elements and name all level-2 list elements (i.e. contrasts) #
   rrvgoData.lst[[reg]] <- compact(rrvgoData.lst[[reg]])
   names(rrvgoData.lst[[reg]]) <- deContrasts[!(deContrasts %in% filteredContrasts)]
+
+  # Also add names to the pwf list elements #
+  names(pwf.lst[[reg]]) <- deContrasts
 }
 
 # Write results to tables #
@@ -187,12 +197,19 @@ for (reg in regDirection) {
     go.tmp.table <- data.frame()
     rv.tmp.table <- data.frame()
 
-    for ( ctg in goCategories ) {
+    if ( ! is.null(goData.lst[[reg]][[i]][[ctg]]) && ! is.null(rrvgoData.lst[[reg]][[ctr]][[ctg]][["90"]]) ) {
+
+      for ( ctg in goCategories ) {
         go.tmp.table <- rbind(go.tmp.table, goData.lst[[reg]][[i]][[ctg]])
         rv.tmp.table <- rbind(rv.tmp.table, rrvgoData.lst[[reg]][[ctr]][[ctg]][["90"]])
+      }
+
+    } else {
+
+      next
     }
 
-      if ( reg == "UP") {
+      if ( reg == "UP" ) {
         tmp.name <- renameContrast(name = ctr, flip = FALSE) %>% gsub("[ ]+", " ", .)
         go.filename <- paste0("Tables/goseq_rrvgo_enrichment/", tmp.name, " - GOSEQ Results.tsv")
         rv.filename <- paste0("Tables/goseq_rrvgo_enrichment/", tmp.name, " - RRVGO Results.tsv")

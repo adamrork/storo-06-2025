@@ -15,6 +15,7 @@
 library(tidyverse)
 library(RColorBrewer)
 library(ggplot2)
+library(goseq)
 
 # Set working directory #
 setwd("~/Desktop/general/projects/clients/2025/002_steven_toro/")
@@ -31,6 +32,10 @@ set.seed(123)
 ### FIGURE GENERATION ###
 #########################
 
+#############
+# DOT PLOTS #
+#############
+
 # Create a color palette (Set1, but with a darker yellow) #
 colors <- brewer.pal(n = 9, "Set1")
 colors[6] <- "#E9D92E"
@@ -40,8 +45,8 @@ for (i in seq_along(regDirection)) {
 
   # Create a list of contrasts having enriched GO Terms #
   ctrVector <- vector()
-  dir <- regDirection[[i]]
-  ctrVector <- names(rrvgoData.lst[[dir]])
+  reg <- regDirection[[i]]
+  ctrVector <- names(rrvgoData.lst[[reg]])
 
   # For each such contrast... #
   for (ctr in ctrVector) {
@@ -50,13 +55,13 @@ for (i in seq_along(regDirection)) {
     for (ont in goCategories) {
 
       # Assign the data frame to a temporary variable #
-      tmp = rrvgoData.lst[[dir]][[ctr]][[ont]]$`90`
+      tmp = rrvgoData.lst[[reg]][[ctr]][[ont]]$`90`
 
       # Create an add-on to the plot title #
       tmp.addition <- paste0(" - Top Enriched ", ont, " Terms")
 
       # Dynamically generate a title for each plot #
-      if ( dir == "UP" ) {
+      if ( reg == "UP" ) {
 
         tmp.name <- renameContrast(name = ctr, addition = tmp.addition, flip = FALSE) %>%
                       gsub("[ ]+", " ", .)
@@ -131,6 +136,49 @@ for (i in seq_along(regDirection)) {
              path = paste0("Figures/goseq_and_rrvgo/clustered_dotplots/", tolower(ont), "/"),
              width = pwidth, height = pheight, units = "in", dpi = 400)
     }
+  }
+}
+
+#############
+# PWF PLOTS #
+#############
+
+# For each direction of differential expression... #
+for (i in seq_along(regDirection)) {
+
+  # Create a list of contrasts having enriched GO Terms #
+  ctrVector <- vector()
+  reg <- regDirection[[i]]
+  ctrVector <- names(pwf.lst[[reg]])
+
+  # For each such contrast... #
+  for (ctr in ctrVector) {
+
+    # Assign the data frame to a temporary variable #
+    tmp = pwf.lst[[reg]][[ctr]]
+
+    # Create an add-on to the plot title #
+    tmp.addition <- paste0(" - goseq PWF")
+
+    # Dynamically generate a title for each plot #
+    if ( reg == "UP" ) {
+
+      tmp.name <- renameContrast(name = ctr, addition = tmp.addition, flip = FALSE) %>%
+        gsub("[ ]+", " ", .)
+
+    } else {
+
+      tmp.name <- renameContrast(name = ctr, addition = tmp.addition, flip = TRUE) %>%
+        gsub("[ ]+", " ", .)
+
+    }
+
+    filepath <- paste0("Figures/goseq_and_rrvgo/pwf_plots/", tmp.name, " plot.pdf")
+
+    pdf(filepath, width = 8, height = 8)
+    plotPWF(pwf.lst[[reg]][[ctr]])
+    title(tmp.name)
+    dev.off()
   }
 }
 

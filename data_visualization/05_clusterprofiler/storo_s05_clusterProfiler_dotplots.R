@@ -154,7 +154,7 @@ for ( ctr in deContrasts ) {
 
         # Create a base dot plot showing the Top pathways per category sorted by RichFactor #
         grp.enrich.df <- slice_max(group_by(enrich.df, category), order_by = RichFactor, n = 25, with_ties = FALSE)
-        grp.enrich.df <- drop_na(grp.enrich.df)
+        grp.enrich.df <- grp.enrich.df[!is.na(grp.enrich.df$category),]
 
         grp.enr.dotplot <- ggplot(grp.enrich.df, aes(x = RichFactor, y = reorder(Description, RichFactor),
                                              color = log.padjust, size = Count)) + xlab("RichFactor") + ggtitle(tmp.title)

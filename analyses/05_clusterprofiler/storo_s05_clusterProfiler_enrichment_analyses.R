@@ -30,7 +30,7 @@ source("Scripts/functions/functions.R")
 load("Data/storo_rdata/storo_s03_differential_gene_expression.RData")
 
 # Define some important variables #
-min.Genes <- 50
+min.Genes <- 25
 min.Terms <- 2
 up.logFC <- 2
 dn.logFC <- -2
@@ -55,6 +55,9 @@ kgEnr <- list()
 # For each contrast... #
 for (ctr in deContrasts) {
 
+  # Print a message to our warnings log to describe which gene set we are analyzing #
+  warning(paste0("Now analyzing contrast ", ctr))
+
   # Convert our DESeq object to a data frame from easier handling #
   tmp <- data.frame(get(ctr))
   tmp[,1] <- rownames(tmp)
@@ -66,7 +69,7 @@ for (ctr in deContrasts) {
                     toType = c("ENTREZID", "SYMBOL"),
                     OrgDb = org.Mm.eg.db)
 
-  # If we have not tored the IDs which cannot be converted
+  # If we have not stored the IDs which cannot be converted
   if ( exists("unmappable_ids") == FALSE ) {
 
     # Do so, for future reference #
@@ -111,6 +114,9 @@ for (reg in regDirection) {
   # For each contrast... #
   for (ctr in deContrasts) {
 
+    # Print a message to our warnings log to describe which gene set we are analyzing #
+    warning(paste0("Now analyzing the ", reg, "REGULATED gene set of contrast ", ctr))
+
     # Create nested lists for our results #
     enterezDiffExpr[[reg]][[ctr]] <- list()
     de.geneVector.lst[[reg]][[ctr]] <- list()
@@ -132,12 +138,20 @@ for (reg in regDirection) {
     de.geneVector.lst[[reg]][[ctr]] <- enterezDiffExpr[[reg]][[ctr]]$log2FoldChange
     names(de.geneVector.lst[[reg]][[ctr]]) <- enterezDiffExpr[[reg]][[ctr]]$ENTREZID
 
-    # In general, I would probably not try to do GO enrichment analyses with fewer than 50 DE genes #
-    if ( length(de.geneVector.lst[[reg]][[ctr]]) >= min.Genes ) {
+    # Implement a manual filter for gene sets that pass the gene set threshold #
+    # but nevertheless display a low-quality PWF or model convergence warnings #
+    gene.set <- paste0(ctr, "_", reg)
+
+    # Here I would not perform GO enrichment analyses with fewer than 25 DE genes or when pwf plot quality is low #
+    if ( length(de.geneVector.lst[[reg]][[ctr]]) >= min.Genes && ! gene.set %in% low.qual.pwfs ) {
 
       # Perform GO and KEGG Enrichment analyses #
       goEnr[[reg]][[ctr]] <- enrichGO(names(de.geneVector.lst[[reg]][[ctr]]), ont = "ALL", org.Mm.eg.db)
       kgEnr[[reg]][[ctr]] <- enrichKEGG(names(de.geneVector.lst[[reg]][[ctr]]), organism = "mmu")
+    } else {
+
+      warning(paste0("Contrast ", ctr, " has too few DE Genes or a low-quality PWF plot"))
+      next
     }
   }
 }
@@ -146,8 +160,9 @@ for ( ctr in deContrasts ) {
 
   if ( !is.list(goGSEnr[[ctr]]) && !is.list(kgGSEnr[[ctr]]) ) {
 
-  goEnr.filename <- paste0("Tables/clusterprofiler/gsea/", ctr, " - clusterProfiler GO-GSEA Results.tsv")
-  kgEnr.filename <- paste0("Tables/clusterprofiler/gsea/", ctr, " - clusterProfiler KEGG-GSEA Results.tsv")
+  tmp.name <- renameContrast(name = ctr, flip = FALSE) %>% gsub("[ ]+", " ", .)
+  goEnr.filename <- paste0("Tables/clusterprofiler/gsea/", tmp.name, " - clusterProfiler GO-GSEA Results.tsv")
+  kgEnr.filename <- paste0("Tables/clusterprofiler/gsea/", tmp.name, " - clusterProfiler KEGG-GSEA Results.tsv")
 
   write.table(x = as.data.frame(goGSEnr[[ctr]]@result), file = goEnr.filename, sep = "\t")
   write.table(x = as.data.frame(kgGSEnr[[ctr]]@result), file = kgEnr.filename, sep = "\t")

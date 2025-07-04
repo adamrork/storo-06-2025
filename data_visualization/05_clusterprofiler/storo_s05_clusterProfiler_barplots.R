@@ -164,7 +164,7 @@ for ( ctr in deContrasts ) {
 
         # Create a base bar plot showing the top terms per category sorted by RichFactor #
         grp.enrich.df <- slice_max(group_by(enrich.df, category), order_by = RichFactor, n = 25, with_ties = FALSE)
-        grp.enrich.df <- drop_na(grp.enrich.df)
+        grp.enrich.df <- grp.enrich.df[!is.na(grp.enrich.df$category),]
 
         grp.enr.barplot <- ggplot(grp.enrich.df, aes(x = RichFactor, y = reorder(Description, RichFactor), fill = log.padjust)) +
           xlab("RichFactor") + ggtitle(tmp.title)
@@ -172,7 +172,7 @@ for ( ctr in deContrasts ) {
         # Create a bar plot with a rich set of annotations #
         annot.enrich.df <- slice_max(group_by(enrich.df, category), order_by = RichFactor, n = 25, with_ties = FALSE) %>%
           mutate(Description = factor(Description, Description))
-        annot.enrich.df <- drop_na(annot.enrich.df)
+        annot.enrich.df <- annot.enrich.df[!is.na(annot.enrich.df$category),]
         annot.enrich.df$ProportionDE <- sapply(grp.enrich.df$GeneRatio, function(x) eval(parse(text = x)))
 
         annot.enr.barplot <- ggplot(annot.enrich.df, aes(x = RichFactor, y = Description, fill = category)) +
