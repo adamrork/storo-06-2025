@@ -21,8 +21,8 @@ library(goseq)
 setwd("~/Desktop/general/projects/clients/2025/002_steven_toro/")
 
 # Import some plotting themes and functions #
-source("Data/storo_lists/lists_and_vectors.R")
-source("Scripts/functions/functions.R")
+source("storo-06-2025/other/lists_and_vectors.R")
+source("storo-06-2025/functions/functions.R")
 load("Data/storo_rdata/storo_s04_goseq-rrvgo_enrichment.RData")
 
 # Set seed for reproducibility #

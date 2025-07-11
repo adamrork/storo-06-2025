@@ -21,8 +21,8 @@ set.seed(123)
 setwd("~/Desktop/general/projects/clients/2025/002_steven_toro/Data/storo_counts/counts/")
 
 # Load contrasts #
-source("../../../Scripts/functions/functions.R")
-source("../../storo_lists/lists_and_vectors.R")
+source("../../../storo-06-2025/functions/functions.R")
+source("../../../storo-06-2025/other/lists_and_vectors.R")
 
 #################
 # PREPROCESSING #

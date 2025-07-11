@@ -25,8 +25,8 @@ set.seed(123)
 setwd("~/Desktop/general/projects/clients/2025/002_steven_toro/")
 
 # Load differential gene expression analysis data #
-source("Data/storo_lists/lists_and_vectors.R")
-source("Scripts/functions/functions.R")
+source("storo-06-2025/other/lists_and_vectors.R")
+source("storo-06-2025/functions/functions.R")
 load("Data/storo_rdata/storo_s03_differential_gene_expression.RData")
 
 # Define some important variables #

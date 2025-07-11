@@ -23,7 +23,7 @@ library(DESeq2)
 setwd("~/Desktop/general/projects/clients/2025/002_steven_toro/")
 
 # Load functions, contrast list, and differential gene expression analysis data #
-source("Scripts/functions/functions.R")
+source("storo-06-2025/functions/functions.R")
 load("Data/storo_rdata/storo_s03_differential_gene_expression.RData")
 
 # Set seed for reproducibility #

@@ -18,8 +18,8 @@ setwd("~/Desktop/general/projects/clients/2025/002_steven_toro/")
 maindir <- getwd()
 
 # Import some plotting themes and functions #
-source("Scripts/functions/functions.R")
-source("Data/storo_lists/lists_and_vectors.R")
+source("storo-06-2025/functions/functions.R")
+source("storo-06-2025/other/lists_and_vectors.R")
 load("Data/storo_rdata/storo_s05_clusterProfiler_enrichment.RData")
 
 # Set seed for reproducibility #
