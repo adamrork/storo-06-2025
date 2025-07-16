@@ -21,7 +21,7 @@ library(GenomicFeatures)
 
 # Set seed for reproducibility #
 set.seed(123)
-warnings()
+
 # Set working directory and other important directories #
 setwd("~/Desktop/general/projects/clients/2025/002_steven_toro/")
 
